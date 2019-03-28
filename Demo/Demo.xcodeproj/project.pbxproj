@@ -116,14 +116,14 @@
 		8903FF0F21D4A10F0062B271 /* WDPageView */ = {
 			isa = PBXGroup;
 			children = (
-				8903FF1021D4A10F0062B271 /* WDPageConfig.h */,
-				8903FF1121D4A10F0062B271 /* WDPageContentView.h */,
-				8903FF1221D4A10F0062B271 /* WDPageView.m */,
-				8903FF1321D4A10F0062B271 /* WDPageTitleView.h */,
-				8903FF1421D4A10F0062B271 /* WDPageConfig.m */,
 				8903FF1521D4A10F0062B271 /* WDPageView.h */,
-				8903FF1621D4A10F0062B271 /* WDPageContentView.m */,
+				8903FF1221D4A10F0062B271 /* WDPageView.m */,
+				8903FF1021D4A10F0062B271 /* WDPageConfig.h */,
+				8903FF1421D4A10F0062B271 /* WDPageConfig.m */,
+				8903FF1321D4A10F0062B271 /* WDPageTitleView.h */,
 				8903FF1721D4A10F0062B271 /* WDPageTitleView.m */,
+				8903FF1121D4A10F0062B271 /* WDPageContentView.h */,
+				8903FF1621D4A10F0062B271 /* WDPageContentView.m */,
 			);
 			name = WDPageView;
 			path = ../WDPageView;

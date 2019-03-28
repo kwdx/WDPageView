@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol WDPageTitleViewDelegate <NSObject>
 
+@optional
+
 - (void)pageTitleView:(WDPageTitleView *)pageTitleView didSelectedIndex:(NSInteger)index;
 
 @end

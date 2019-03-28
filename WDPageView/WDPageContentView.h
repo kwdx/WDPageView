@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol WDPageContentViewDelegate <NSObject>
 
+@optional
+
 - (void)pageContentView:(WDPageContentView *)pageContentView dragProgress:(CGFloat)progress sourceIndex:(NSInteger)sourceIndex targetIndex:(NSInteger)targetIndex;
 
 @end

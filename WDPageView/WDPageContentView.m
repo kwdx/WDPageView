@@ -199,6 +199,7 @@
     
     [self setNeedsLayout];
     [self layoutIfNeeded];
+    [_scrollView setContentOffset:CGPointZero];
 }
 
 #pragma mark - Getter

@@ -94,8 +94,8 @@
     if (scrollWidth > 0) {
         CGFloat offsetX = currentLabel.center.x - scrollWidth * 0.5;
         
-        CGFloat maxOffsetX = _scrollView.contentSize.width - scrollWidth - _pageConfig.titlePaddingRight;
-        offsetX = MIN(maxOffsetX, MAX(offsetX, _pageConfig.titlePaddingLeft));
+        CGFloat maxOffsetX = _scrollView.contentSize.width - scrollWidth;
+        offsetX = MIN(maxOffsetX, MAX(offsetX, 0));
         
         [_scrollView setContentOffset:CGPointMake(offsetX, 0) animated:YES];
     }
@@ -153,9 +153,9 @@
         CGFloat sourceOffsetX = sourceLabel.center.x - scrollWidth * 0.5;
         CGFloat targetOffsetX = targetLabel.center.x - scrollWidth * 0.5;
         
-        CGFloat maxOffsetX = _scrollView.contentSize.width - scrollWidth - _pageConfig.titlePaddingRight;
-        sourceOffsetX = MIN(maxOffsetX, MAX(sourceOffsetX, _pageConfig.titlePaddingLeft));
-        targetOffsetX = MIN(maxOffsetX, MAX(targetOffsetX, _pageConfig.titlePaddingLeft));
+        CGFloat maxOffsetX = _scrollView.contentSize.width - scrollWidth;
+        sourceOffsetX = MIN(maxOffsetX, MAX(sourceOffsetX, 0));
+        targetOffsetX = MIN(maxOffsetX, MAX(targetOffsetX, 0));
 
         CGFloat offsetX = sourceOffsetX + (targetOffsetX - sourceOffsetX) * progress;
         
@@ -221,6 +221,7 @@
         firstLabel.font = _pageConfig.selectedFont.font;
         _scrollLine.frame = [self getScrollLineFrameForLabel:firstLabel];
     }
+    _scrollView.contentOffset = CGPointZero;
     _currentIdx = 0;
 }
 
@@ -232,6 +233,7 @@
         _scrollView.showsHorizontalScrollIndicator = NO;
         _scrollView.showsVerticalScrollIndicator = NO;
         _scrollView.bounces = NO;
+        _scrollView.scrollsToTop = NO;
     }
     return _scrollView;
 }
