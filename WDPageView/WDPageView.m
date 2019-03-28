@@ -16,6 +16,8 @@
 @property (nonatomic, strong) WDPageTitleView *titleView;
 @property (nonatomic, strong) WDPageContentView *contentView;
 
+@property (nonatomic, assign) NSInteger currentIndex;
+
 @end
 
 @implementation WDPageView
@@ -56,24 +58,29 @@
     if (index >= _titleView.titles.count) {
         return;
     }
-    [_titleView setTitleWithProgress:1 sourceIndex:index targetIndex:index];
+    if (self.currentIndex == index) {
+        return;
+    }
+    [_titleView setTitleWithProgress:1 sourceIndex:self.currentIndex targetIndex:index];
     [_contentView setCurrentIndex:index];
-}
-
-- (NSUInteger)currentIndx {
-    return _contentView.currentIndex;
+    _currentIndex = index;
 }
 
 #pragma mark - WDPageTitleViewDelegate
 
 - (void)pageTitleView:(WDPageTitleView *)pageTitleView didSelectedIndex:(NSInteger)index {
     [_contentView setCurrentIndex:index];
+    self.currentIndex = index;
 }
 
 #pragma mark - WDPageContentViewDelegate
 
 - (void)pageContentView:(WDPageContentView *)pageContentView dragProgress:(CGFloat)progress sourceIndex:(NSInteger)sourceIndex targetIndex:(NSInteger)targetIndex {
     [_titleView setTitleWithProgress:progress sourceIndex:sourceIndex targetIndex:targetIndex];
+    self.currentIndex = progress > 0.5 ? targetIndex : sourceIndex;
+    if ([self.delegate respondsToSelector:@selector(pageView:scrollProgress:fromIndex:toIndex:)]) {
+        [self.delegate pageView:self scrollProgress:progress fromIndex:sourceIndex toIndex:targetIndex];
+    }
 }
 
 #pragma mark - Setter
@@ -87,6 +94,16 @@
     
     [self setNeedsLayout];
     [self layoutIfNeeded];
+}
+
+- (void)setCurrentIndex:(NSInteger)currentIndex {
+    if (_currentIndex == currentIndex) {
+        return;
+    }
+    _currentIndex = currentIndex;
+    if ([self.delegate respondsToSelector:@selector(pageView:didSelectedIndex:)]) {
+        [self.delegate pageView:self didSelectedIndex:currentIndex];
+    }
 }
 
 #pragma mark - Getter
