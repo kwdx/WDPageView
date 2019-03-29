@@ -145,6 +145,22 @@
     targetLabel.textColor = targetColor.color;
     targetLabel.font = targetFont.font;
 
+    NSInteger start = MAX(0, MIN(sourceIndex, targetIndex) - 1);
+    NSInteger end = MIN(self.titleLabels.count - 1, MAX(sourceIndex, targetIndex) + 1);
+    for (NSInteger i = start; i <= end; i++) {
+        UILabel *label = self.titleLabels[i];
+        if (label == sourceLabel && label != targetLabel) {
+            sourceLabel.textColor = sourceColor.color;
+            sourceLabel.font = sourceFont.font;
+        } else if (label == targetLabel) {
+            targetLabel.textColor = targetColor.color;
+            targetLabel.font = targetFont.font;
+        } else {
+            label.font = self.pageConfig.normalFont.font;
+            label.textColor = self.pageConfig.normalColor.color;
+        }
+    }
+    
     // 4.记录最新的index
     _currentIdx = targetIndex;
 
