@@ -11,6 +11,6 @@
   * Import文件：`#import "WDPageView.h"`
 
 * Cocoapods
-  * `pod 'WDPageView', '~> 0.0.2'`
+  * `pod 'WDPageView', '~> 0.0.3'`
   * Import文件：`#import <WDPageView.h>`
 
