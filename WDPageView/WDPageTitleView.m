@@ -12,11 +12,10 @@
 
 @property (nonatomic, strong) WDPageConfig *pageConfig;
 
-@property (nonatomic, assign) NSInteger currentIdx;
+@property (nonatomic, assign) NSInteger currentIndex;
 @property (nonatomic, strong) UIScrollView *scrollView;
 @property (nonatomic, strong) NSArray *titleLabels;
 @property (nonatomic, strong) UIView *scrollLine;
-@property (nonatomic, strong) UIView *bottomLine;
 
 @end
 
@@ -36,6 +35,22 @@
 - (void)setupSubviews {
     [self addSubview:self.scrollView];
     [self.scrollView addSubview:self.scrollLine];
+    
+    CGFloat itemHeight = _pageConfig.itemHeight + _pageConfig.itemPaddingV * 2;
+    CGFloat itemY = (self.frame.size.height - itemHeight) / 2;
+    for (UILabel *label in _titleLabels) {
+        CGRect labelFrame = label.frame;
+        labelFrame.origin.y = itemY;
+        label.frame = labelFrame;
+    }
+    if (_currentIndex < _titleLabels.count) {
+        UILabel *label = _titleLabels[_currentIndex];
+        CGRect scrollLineFrame = _scrollLine.frame;
+        scrollLineFrame.origin.y = CGRectGetMaxY(label.frame) + _pageConfig.lineMarginTop;
+        _scrollLine.frame = scrollLineFrame;
+    } else {
+        _scrollLine.frame = CGRectZero;
+    }
 }
 
 - (void)layoutSubviews {
@@ -53,128 +68,136 @@
     }
     
     // 1.如果是重复点击用一个title，那么直接返回
-    if (currentLabel.tag == _currentIdx) {
+    if (currentLabel.tag == _currentIndex) {
         return;
     }
     
-    // 2.获取之前的label
-    UILabel *oldLabel = self.titleLabels[_currentIdx];
+    // 2.滑动到当前index
+    [self scrollToIndex:currentLabel.tag];
     
-    // 3.保存最新label的下标
-    _currentIdx = currentLabel.tag;
-    
-    // 4.计算滚动条位置
-    CGRect frame = [self getScrollLineFrameForLabel:currentLabel];
-
-    // 动画
-    [UIView animateWithDuration:0.25 animations:^{
-        // 5.切换字体颜色
-        oldLabel.textColor = self.pageConfig.normalColor.color;
-        oldLabel.font = self.pageConfig.normalFont.font;
-        currentLabel.textColor = self.pageConfig.selectedColor.color;
-        currentLabel.font = self.pageConfig.selectedFont.font;
-
-        // 6.滚动条位置发生改变
-        self.scrollLine.frame = frame;
-    }];
-    
-    for (UILabel *label in self.titleLabels) {
-        if (label != currentLabel && label != oldLabel) {
-            label.textColor = _pageConfig.normalColor.color;
-            label.font = _pageConfig.normalFont.font;
-        }
-    }
-    
-    // 7.通知代理
+    // 3.通知代理
     if (self.delegate) {
-        [self.delegate pageTitleView:self didSelectedIndex:_currentIdx];
-    }
-    
-    CGFloat scrollWidth = _scrollView.frame.size.width;
-    if (scrollWidth > 0) {
-        CGFloat offsetX = currentLabel.center.x - scrollWidth * 0.5;
-        
-        CGFloat maxOffsetX = _scrollView.contentSize.width - scrollWidth;
-        offsetX = MIN(maxOffsetX, MAX(offsetX, 0));
-        
-        [_scrollView setContentOffset:CGPointMake(offsetX, 0) animated:YES];
+        [self.delegate pageTitleView:self didSelectedIndex:_currentIndex];
     }
 }
 
 #pragma mark - Public
 
-- (void)setTitleWithProgress:(CGFloat)progress sourceIndex:(NSInteger)sourceIndex targetIndex:(NSInteger)targetIndex {
-    // 1.取出sourceLabel/targetLabel
-    UILabel *sourceLabel = self.titleLabels[sourceIndex];
-    UILabel *targetLabel = self.titleLabels[targetIndex];
+- (void)scrollToIndex:(NSInteger)index {
+    if (index >= _titleLabels.count) {
+        return;
+    }
+    UILabel *currentLabel = _titleLabels[index];
+    _currentIndex = index;
+    CGRect frame = [self getScrollLineFrameForLabel:currentLabel];
     
-    // 2.处理滑块的逻辑
-    CGRect scrollLineFrame = [self getScrollLineFrameForLabel:sourceLabel];
-    CGRect sourceFrame = [self getScrollLineFrameForLabel:sourceLabel];
-    CGRect targetFrame = [self getScrollLineFrameForLabel:targetLabel];
-    scrollLineFrame.origin.x -= (sourceFrame.origin.x - targetFrame.origin.x) * progress;
-    scrollLineFrame.size.width -= (sourceFrame.size.width - targetFrame.size.width) * progress;
-    self.scrollLine.frame = scrollLineFrame;
+    CGFloat scrollWidth = _scrollView.frame.size.width;
+    CGFloat maxOffsetX = _scrollView.contentSize.width - scrollWidth;
+    CGFloat offsetX = currentLabel.center.x - scrollWidth * 0.5;
+    offsetX = MIN(MAX(maxOffsetX, 0), MAX(offsetX, 0));
     
-    // 3.颜色的渐变
-    // 3.1 取出变化的范围
-    WDPageColor *sourceColor = self.pageConfig.selectedColor.copy;
-    WDPageColor *targetColor = self.pageConfig.normalColor.copy;
-    WDPageFont *sourceFont = self.pageConfig.selectedFont.copy;
-    WDPageFont *targetFont = self.pageConfig.normalFont.copy;
-    CGFloat deltaRed = sourceColor.red - targetColor.red;
-    CGFloat deltaGreen = sourceColor.green - targetColor.green;
-    CGFloat deltaBlue = sourceColor.blue - targetColor.blue;
-    CGFloat deltaFontSize = sourceFont.fontSize - targetFont.fontSize;
-    CGFloat deltaFontWeight = sourceFont.fontWeight - targetFont.fontWeight;
-    sourceColor.red -= deltaRed * progress;
-    sourceColor.green -= deltaGreen * progress;
-    sourceColor.blue -= deltaBlue * progress;
-    targetColor.red += deltaRed * progress;
-    targetColor.green += deltaGreen * progress;
-    targetColor.blue += deltaBlue * progress;
-    sourceFont.fontSize -= deltaFontSize * progress;
-    sourceFont.fontWeight -= deltaFontWeight * progress;
-    targetFont.fontSize += deltaFontSize * progress;
-    targetFont.fontWeight += deltaFontWeight * progress;
+    [UIView animateWithDuration:0.25 animations:^{
+        currentLabel.textColor = self.pageConfig.selectedColor;
+        currentLabel.font = self.pageConfig.selectedFont;
+        self.scrollLine.frame = frame;
+        self.scrollView.contentOffset = CGPointMake(offsetX, 0);
+    }];
+    
+    for (UILabel *label in self.titleLabels) {
+        if (label != currentLabel) {
+            label.textColor = _pageConfig.normalColor;
+            label.font = _pageConfig.normalFont;
+        }
+    }
+}
 
-    // 3.2 变化sourceLabel
-    sourceLabel.textColor = sourceColor.color;
-    sourceLabel.font = sourceFont.font;
-    // 3.3 变化sourceLabel
-    targetLabel.textColor = targetColor.color;
-    targetLabel.font = targetFont.font;
+- (void)currentScrollAt:(CGFloat)pageFloat {
+    NSInteger left = 0;
+    NSInteger right = 0;
+    if (CGFLOAT_IS_DOUBLE) {
+        left = @(floor(pageFloat)).integerValue;
+        right = @(ceil(pageFloat)).integerValue;
+    } else {
+        left = @(floorf(pageFloat)).integerValue;
+        right = @(ceilf(pageFloat)).integerValue;
+    }
+    if (right >= self.titles.count || left < 0) {
+        return;
+    }
+    CGFloat progress = pageFloat - left;
+    if (left == right) {
+        progress = 1;
+    }
+    [self scrollBetween:left and:right withProgress:progress];
+}
 
-    NSInteger start = MAX(0, MIN(sourceIndex, targetIndex) - 1);
-    NSInteger end = MIN(self.titleLabels.count - 1, MAX(sourceIndex, targetIndex) + 1);
-    for (NSInteger i = start; i <= end; i++) {
-        UILabel *label = self.titleLabels[i];
-        if (label == sourceLabel && label != targetLabel) {
-            sourceLabel.textColor = sourceColor.color;
-            sourceLabel.font = sourceFont.font;
-        } else if (label == targetLabel) {
-            targetLabel.textColor = targetColor.color;
-            targetLabel.font = targetFont.font;
+#pragma mark - Private
+
+- (void)scrollBetween:(NSInteger)left and:(NSInteger)right withProgress:(CGFloat)progress {
+    NSInteger leftIndex = left < right ? left : right;
+    NSInteger rightIndex = left < right ? right : left;
+    
+    UILabel *leftLabel = _titleLabels[leftIndex];
+    UILabel *rightLabel = _titleLabels[rightIndex];
+    
+    CGRect lineFrame = [self getScrollLineFrameForLabel:leftLabel];
+    CGRect toLineFrame = [self getScrollLineFrameForLabel:rightLabel];
+    if (_pageConfig.lineStyle == WDPageTitleLineStyleFlexible) {
+        if (progress <= 0.5) {
+            lineFrame.size.width += (CGRectGetMaxX(toLineFrame) - CGRectGetMaxX(lineFrame)) * (progress / 0.5);
         } else {
-            label.font = self.pageConfig.normalFont.font;
-            label.textColor = self.pageConfig.normalColor.color;
+            lineFrame.size.width = (toLineFrame.origin.x - lineFrame.origin.x) * ((1 - progress) / 0.5) + toLineFrame.size.width;
+            lineFrame.origin.x = CGRectGetMaxX(toLineFrame) - lineFrame.size.width;
+        }
+    } else {
+        lineFrame.origin.x -= (lineFrame.origin.x - toLineFrame.origin.x) * progress;
+        lineFrame.size.width -= (lineFrame.size.width - toLineFrame.size.width) * progress;
+    }
+    _scrollLine.frame = lineFrame;
+    
+    CGFloat r1, g1, b1, a1;
+    CGFloat r2, g2, b2, a2;
+    [_pageConfig.selectedColor getRed:&r1 green:&g1 blue:&b1 alpha:&a1];
+    [_pageConfig.normalColor getRed:&r2 green:&g2 blue:&b2 alpha:&a2];
+    
+    CGFloat deltaR = r1 - r2;
+    CGFloat deltaG = g1 - g2;
+    CGFloat deltaB = b1 - b2;
+    CGFloat deltaA = a1 - a2;
+    UIColor *leftColor = [UIColor colorWithRed:(r1 - deltaR * progress) green:(g1 - deltaG * progress) blue:(b1 - deltaB * progress) alpha:(a1 - deltaA * progress)];
+    UIColor *rightColor = [UIColor colorWithRed:(r2 + deltaR * progress) green:(g2 + deltaG * progress) blue:(b2 + deltaB * progress) alpha:(a2 + deltaA * progress)];
+    
+    UIFont *leftFont = _pageConfig.selectedFont;
+    UIFont *rightFont = _pageConfig.normalFont;
+    if (progress > 0.5) {
+        leftFont = _pageConfig.normalFont;
+        rightFont = _pageConfig.selectedFont;
+    }
+    
+    for (UILabel *label in _titleLabels) {
+        if (label == leftLabel && label != rightLabel) {
+            leftLabel.textColor = leftColor;
+            leftLabel.font = leftFont;
+        } else if (label == rightLabel) {
+            rightLabel.textColor = rightColor;
+            rightLabel.font = rightFont;
+        } else {
+            label.textColor = _pageConfig.normalColor;
+            label.font = _pageConfig.normalFont;
         }
     }
     
-    // 4.记录最新的index
-    _currentIdx = targetIndex;
-
+    _currentIndex = progress > 0.5 ? rightIndex : leftIndex;
+    
     CGFloat scrollWidth = _scrollView.frame.size.width;
     if (scrollWidth > 0) {
-        CGFloat sourceOffsetX = sourceLabel.center.x - scrollWidth * 0.5;
-        CGFloat targetOffsetX = targetLabel.center.x - scrollWidth * 0.5;
+        CGFloat leftOffSetX = leftLabel.center.x - scrollWidth * 0.5;
+        CGFloat rightOffsetX = rightLabel.center.x - scrollWidth * 0.5;
         
         CGFloat maxOffsetX = _scrollView.contentSize.width - scrollWidth;
-        sourceOffsetX = MIN(maxOffsetX, MAX(sourceOffsetX, 0));
-        targetOffsetX = MIN(maxOffsetX, MAX(targetOffsetX, 0));
-
-        CGFloat offsetX = sourceOffsetX + (targetOffsetX - sourceOffsetX) * progress;
         
+        CGFloat offsetX = leftOffSetX + (rightOffsetX - leftOffSetX) * progress;
+        offsetX = MIN(MAX(maxOffsetX, 0), MAX(offsetX, 0));
         _scrollView.contentOffset = CGPointMake(offsetX, 0);
     }
 }
@@ -200,8 +223,8 @@
         UILabel *label = [UILabel new];
         label.text = obj;
         label.tag = idx;
-        label.font = self.pageConfig.normalFont.font;
-        label.textColor = self.pageConfig.normalColor.color;
+        label.font = self.pageConfig.normalFont;
+        label.textColor = self.pageConfig.normalColor;
         label.textAlignment = NSTextAlignmentCenter;
         
         [label sizeToFit];
@@ -233,12 +256,12 @@
     // 默认第一个Label
     UILabel *firstLabel = labels.firstObject;
     if (firstLabel) {
-        firstLabel.textColor = _pageConfig.selectedColor.color;
-        firstLabel.font = _pageConfig.selectedFont.font;
+        firstLabel.textColor = _pageConfig.selectedColor;
+        firstLabel.font = _pageConfig.selectedFont;
         _scrollLine.frame = [self getScrollLineFrameForLabel:firstLabel];
     }
     _scrollView.contentOffset = CGPointZero;
-    _currentIdx = 0;
+    _currentIndex = 0;
 }
 
 #pragma mark - Getter
@@ -250,6 +273,9 @@
         _scrollView.showsVerticalScrollIndicator = NO;
         _scrollView.bounces = NO;
         _scrollView.scrollsToTop = NO;
+        if (@available(iOS 11.0, *)) {
+            _scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+        }
     }
     return _scrollView;
 }
@@ -260,14 +286,6 @@
         _scrollLine.backgroundColor = self.pageConfig.lineColor;
     }
     return _scrollLine;
-}
-
-- (UIView *)bottomLine {
-    if (!_bottomLine) {
-        _bottomLine = [[UIView alloc] init];
-        _bottomLine.backgroundColor = self.pageConfig.bottomLineColor;
-    }
-    return _bottomLine;
 }
 
 - (CGRect)getScrollLineFrameForLabel:(UILabel *)label {

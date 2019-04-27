@@ -12,7 +12,6 @@
 
 @property (nonatomic, strong) WDPageConfig *pageConfig;
 
-@property (nonatomic, assign) CGFloat startOffsetX;
 @property (nonatomic, assign) BOOL isClickScrollDelegate;
 @property (nonatomic, strong) UIScrollView *scrollView;
 
@@ -84,8 +83,6 @@
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
     _isClickScrollDelegate = NO;
-    
-    _startOffsetX = scrollView.contentOffset.x;
 }
 
 - (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView {
@@ -119,68 +116,44 @@
     }
     
     // 1.定义获取需要的数据
-    CGFloat progress = 0;
-    NSInteger sourceIndex = 0;
-    NSInteger targetIndex = 0;
-    
-    // 2.判断是左滑还是右滑
-    CGFloat currentOffsetX = scrollView.contentOffset.x;
-    CGFloat scrollViewW = scrollView.bounds.size.width;
-    
-    if (currentOffsetX > _startOffsetX) {   // 左滑
-        // 1.计算progress
-        progress = (currentOffsetX / scrollViewW) - floor(currentOffsetX / scrollViewW);
-        
-        // 2.计算sourceIndex
-        sourceIndex = @(currentOffsetX / scrollViewW).integerValue;
-    
-        // 3.计算targetIndex
-        targetIndex = sourceIndex + 1;
-        if (targetIndex >= _childVCs.count) {
-            targetIndex = _childVCs.count - 1;
-        }
-
-        // 4.如果完全划过去了，就停止吧
-        if (currentOffsetX - _startOffsetX == scrollViewW) {
-            _startOffsetX = currentOffsetX;
-            progress = 1;
-            targetIndex = sourceIndex;
-        }
-    } else {    // 右滑
-        // 1.计算progress
-        progress = 1 - ((currentOffsetX / scrollViewW) - floor(currentOffsetX / scrollViewW));
-        
-        // 2.计算sourceIndex
-        targetIndex = @(currentOffsetX / scrollViewW).integerValue;
-        
-        // 3.计算sourceIndex
-        sourceIndex = targetIndex + 1;
-        if (sourceIndex >= _childVCs.count) {
-            sourceIndex = _childVCs.count - 1;
-        }
-    
-        // 4.如果完全划过去了，就停止吧
-        if (_startOffsetX - currentOffsetX == scrollViewW) {
-            _startOffsetX = currentOffsetX;
-            progress = 1;
-            sourceIndex = targetIndex;
-        }
-    }
-
-    if (targetIndex < _childVCs.count && targetIndex >= 0) {
-        UIViewController *vc = _childVCs[targetIndex];
-        [_scrollView addSubview:vc.view];
-        CGRect frame = _scrollView.bounds;
-        frame.origin.x = targetIndex * _scrollView.frame.size.width;
-        vc.view.frame = frame;
+    CGFloat pageProgress = scrollView.contentOffset.x / scrollView.bounds.size.width;
+    NSInteger left = 0;
+    NSInteger right = 0;
+    if (CGFLOAT_IS_DOUBLE) {
+        left = @(floor(pageProgress)).integerValue;
+        right = @(ceil(pageProgress)).integerValue;
+    } else {
+        left = @(floorf(pageProgress)).integerValue;
+        right = @(ceilf(pageProgress)).integerValue;
     }
     
-    if (sourceIndex == targetIndex) {
-        progress = 1;
+    if (right >= _childVCs.count || left < 0) {
+        return;
     }
-    // 3.将progress/sourceIndex/targetIndex传递给titleView
+    
+    _currentIndex = (pageProgress - left) > 0.5 ? right : left;
+    
+    // 2.将pageProgress传递出去
     if (self.delegate) {
-        [self.delegate pageContentView:self dragProgress:progress sourceIndex:sourceIndex targetIndex:targetIndex];
+        [self.delegate pageContentView:self dragAtPageProgress:pageProgress];
+    }
+    
+    if (left != right) {
+        UIViewController *leftVC = _childVCs[left];
+        UIViewController *rightVC = _childVCs[right];
+        CGRect frame = _scrollView.bounds;
+        frame.origin.x = left * frame.size.width;
+        leftVC.view.frame = frame;
+        frame.origin.x += frame.size.width;
+        rightVC.view.frame = frame;
+        [_scrollView addSubview:leftVC.view];
+        [_scrollView addSubview:rightVC.view];
+    } else {
+        UIViewController *leftVC = _childVCs[left];
+        CGRect frame = _scrollView.bounds;
+        frame.origin.x = left * frame.size.width;
+        leftVC.view.frame = frame;
+        [_scrollView addSubview:leftVC.view];
     }
 }
 
@@ -213,6 +186,9 @@
         _scrollView.pagingEnabled = YES;
         _scrollView.scrollsToTop = NO;
         _scrollView.delegate = self;
+        if (@available(iOS 11.0, *)) {
+            _scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+        }
     }
     return _scrollView;
 }

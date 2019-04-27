@@ -61,7 +61,7 @@
     if (self.currentIndex == index) {
         return;
     }
-    [_titleView setTitleWithProgress:1 sourceIndex:self.currentIndex targetIndex:index];
+    [_titleView scrollToIndex:index];
     [_contentView setCurrentIndex:index];
     _currentIndex = index;
 }
@@ -75,11 +75,11 @@
 
 #pragma mark - WDPageContentViewDelegate
 
-- (void)pageContentView:(WDPageContentView *)pageContentView dragProgress:(CGFloat)progress sourceIndex:(NSInteger)sourceIndex targetIndex:(NSInteger)targetIndex {
-    [_titleView setTitleWithProgress:progress sourceIndex:sourceIndex targetIndex:targetIndex];
-    self.currentIndex = progress > 0.5 ? targetIndex : sourceIndex;
-    if ([self.delegate respondsToSelector:@selector(pageView:scrollProgress:fromIndex:toIndex:)]) {
-        [self.delegate pageView:self scrollProgress:progress fromIndex:sourceIndex toIndex:targetIndex];
+- (void)pageContentView:(WDPageContentView *)pageContentView dragAtPageProgress:(CGFloat)pageProgress {
+    [_titleView currentScrollAt:pageProgress];
+    self.currentIndex = _titleView.currentIndex;
+    if ([self.delegate respondsToSelector:@selector(pageView:dragAtPageProgress:)]) {
+        [self.delegate pageView:self dragAtPageProgress:pageProgress];
     }
 }
 

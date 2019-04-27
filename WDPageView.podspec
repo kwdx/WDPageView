@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name          = "WDPageView"
-  s.version       = "0.0.2"
+  s.version       = "0.0.3"
   s.summary       = "A page scrolling inspired by UIScrollView"
   s.homepage      = "https://github.com/kwdx/WDPageView"
   s.license       = "MIT"

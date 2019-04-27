@@ -27,9 +27,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<WDPageTitleViewDelegate> delegate;
 
-@property (nonatomic, strong) NSArray<NSString *> *titles;
+@property (nonatomic, strong, nullable) NSArray<NSString *> *titles;
+@property (nonatomic, assign, readonly) NSInteger currentIndex;
 
-- (void)setTitleWithProgress:(CGFloat)progress sourceIndex:(NSInteger)sourceIndex targetIndex:(NSInteger)targetIndex;
+- (void)scrollToIndex:(NSInteger)toIndex;
+- (void)currentScrollAt:(CGFloat)pageFloat;
 
 @end
 

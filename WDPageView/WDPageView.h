@@ -31,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
 @optional
 
 - (void)pageView:(WDPageView *)pageView didSelectedIndex:(NSInteger)selectedIndex;
-- (void)pageView:(WDPageView *)pageView scrollProgress:(CGFloat)progress fromIndex:(NSInteger)fromIndex toIndex:(NSInteger)toIndex;
+- (void)pageView:(WDPageView *)pageView dragAtPageProgress:(CGFloat)pageProgress;
 
 @end
 
